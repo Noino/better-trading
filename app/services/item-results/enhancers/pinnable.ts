@@ -24,7 +24,7 @@ export default class Pinnable extends Service implements ItemResultsEnhancerServ
   pinnedItems: PinnedItemsMap = {};
 
   enhance(itemElement: HTMLElement) {
-    const detailsElement = itemElement.querySelector('.details .pull-left');
+    const detailsElement = itemElement.querySelector('.details .btns');
     if (!detailsElement) return;
 
     detailsElement.appendChild(this.renderPinButton());
@@ -71,6 +71,10 @@ export default class Pinnable extends Service implements ItemResultsEnhancerServ
 
   private renderPinButton(): HTMLElement {
     const element = window.document.createElement('button');
+    // standard button styles from pathofexile.com
+    element.classList.add('btn');
+    element.classList.add('btn-default');
+    // our style overrides
     element.classList.add('bt-pin-button');
     element.innerHTML = `
       <span class="bt-pin-button-unpinned">
@@ -82,20 +86,24 @@ export default class Pinnable extends Service implements ItemResultsEnhancerServ
     `;
     element.addEventListener('click', this.handlePinClick.bind(this));
 
-    return element;
+    // for consistency with sibling button layouts/styling
+    const wrapper = window.document.createElement('span');
+    wrapper.appendChild(element);
+
+    return wrapper;
   }
 
   private createPinnedItem(id: string, result: HTMLElement): ItemResultsPinnedItem | null {
     const detailsElement = result.querySelector('.middle') as HTMLElement;
-    const socketsElement = result.querySelector('.sockets') as HTMLElement;
+    const renderedItemElement = result.querySelector('.itemRendered') as HTMLElement;
     const pricingElement = result.querySelector('.details .price') as HTMLElement;
 
-    if (!detailsElement || !socketsElement || !pricingElement) return null;
+    if (!detailsElement || !renderedItemElement || !pricingElement) return null;
 
     return {
       id,
       detailsElement: detailsElement.cloneNode(true) as HTMLElement,
-      socketsElement: socketsElement.cloneNode(true) as HTMLElement,
+      renderedItemElement: renderedItemElement.cloneNode(true) as HTMLElement,
       pricingElement: pricingElement.cloneNode(true) as HTMLElement,
       pinnedAt: new Date().toISOString(),
     };

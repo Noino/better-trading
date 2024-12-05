@@ -1,7 +1,7 @@
 {
   "name": "better-trading",
-  "version": "1.4.0",
-  "changelog": "1-4-0-tft",
+  "version": "1.7.2",
+  "changelog": "1-7-2-tota-1",
   "private": true,
   "directories": {
     "doc": "doc",
@@ -14,8 +14,8 @@
   "repository": "https://github.com/poe-world/better-trading",
   "engine-strict": true,
   "engines": {
-    "node": "~10.15",
-    "npm": "~6.4"
+    "node": "~12.22",
+    "npm": "~6.14"
   },
   "devDependencies": {
     "@ember/optional-features": "~1.1.0",
@@ -32,6 +32,7 @@
     "@types/ember-testing-helpers": "~0.0.3",
     "@types/ember__test-helpers": "~0.7.8",
     "@types/handlebars": "~4.1.0",
+    "@types/lodash": "^4.14.186",
     "@types/mocha": "~5.2.6",
     "@types/rsvp": "~4.0.2",
     "@types/sinon": "~7.0.11",
@@ -84,7 +85,9 @@
     "eslint-plugin-ember": "~7.2.0",
     "eslint-plugin-mirego": "~0.0.1",
     "eslint-plugin-node": "~10.0.0",
+    "js-base64": "^3.7.2",
     "loader.js": "~4.7.0",
+    "lodash": "^4.17.21",
     "prettier": "~2.1.2",
     "sass": "~1.20.1",
     "sinon": "~9.0.2",

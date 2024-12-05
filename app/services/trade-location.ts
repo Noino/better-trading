@@ -6,7 +6,11 @@ import {timeout} from 'ember-concurrency';
 import Evented from '@ember/object/evented';
 
 // Types
-import {TradeLocationChangeEvent, TradeLocationStruct} from 'better-trading/types/trade-location';
+import {
+  ExactTradeLocationStruct,
+  TradeLocationChangeEvent,
+  TradeLocationStruct,
+} from 'better-trading/types/trade-location';
 import {Task} from 'better-trading/types/ember-concurrency';
 import TradeLocationHistory from 'better-trading/services/trade-location/history';
 
@@ -16,49 +20,37 @@ import config from 'better-trading/config/environment';
 // Constants
 const BASE_URL = 'https://www.pathofexile.com/trade';
 
-interface ParsedPath {
-  type: string;
-  league: string;
-  slug?: string;
-}
-
 export default class TradeLocation extends Service.extend(Evented) {
   @service('trade-location/history')
   tradeLocationHistory: TradeLocationHistory;
 
-  lastTradeLocation: TradeLocationStruct = this.currentTradeLocation;
+  lastTradeLocation: ExactTradeLocationStruct = this.currentTradeLocation;
 
   get type(): string | null {
-    const {type} = this.parseCurrentPath();
-
-    return type || null;
+    return this.currentTradeLocation.type;
   }
 
   get league(): string | null {
-    const {league} = this.parseCurrentPath();
-
-    return league || null;
+    return this.currentTradeLocation.league;
   }
 
   get slug(): string | null {
-    const {slug} = this.parseCurrentPath();
-
-    return slug || null;
+    return this.currentTradeLocation.slug;
   }
 
-  get currentTradeLocation(): TradeLocationStruct {
-    return {
-      slug: this.slug,
-      type: this.type,
-      league: this.league,
-    };
+  get isLive(): boolean {
+    return this.currentTradeLocation.isLive;
+  }
+
+  get currentTradeLocation(): ExactTradeLocationStruct {
+    return this.parseCurrentPath();
   }
 
   @restartableTask
   *locationPollingTask() {
     const currentTradeLocation = this.currentTradeLocation;
 
-    if (!this.compareTradeLocations(this.lastTradeLocation, currentTradeLocation)) {
+    if (!this.compareExactTradeLocations(this.lastTradeLocation, currentTradeLocation)) {
       const changeEvent: TradeLocationChangeEvent = {
         oldTradeLocation: this.lastTradeLocation,
         newTradeLocation: currentTradeLocation,
@@ -82,6 +74,7 @@ export default class TradeLocation extends Service.extend(Evented) {
     this.startLocationPolling();
   }
 
+  // in non-PC realms, league should be of form "realm/LeagueName", eg "xbox/Legion"
   getTradeUrl(type: string, slug: string, league: string) {
     return [BASE_URL, type, league, slug].join('/');
   }
@@ -92,6 +85,10 @@ export default class TradeLocation extends Service.extend(Evented) {
     );
   }
 
+  compareExactTradeLocations(locationA: ExactTradeLocationStruct, locationB: ExactTradeLocationStruct) {
+    return this.compareTradeLocations(locationA, locationB) && locationA.isLive === locationB.isLive;
+  }
+
   async fetchHistoryEntries() {
     return this.tradeLocationHistory.fetchHistoryEntries();
   }
@@ -100,10 +97,24 @@ export default class TradeLocation extends Service.extend(Evented) {
     return this.tradeLocationHistory.clearHistoryEntries();
   }
 
-  private parseCurrentPath(): ParsedPath {
-    const [type, league, slug] = window.location.pathname.replace('/trade/', '').split('/');
+  private parseCurrentPath(): ExactTradeLocationStruct {
+    const tradeRealms = ['xbox', 'sony'];
+    const pathParts = window.location.pathname.replace('/trade/', '').split('/');
+    let type, league, slug, live;
+    if (tradeRealms.includes(pathParts[1])) {
+      let realm, leagueInRealm;
+      [type, realm, leagueInRealm, slug, live] = pathParts;
+      league = `${realm}/${leagueInRealm}`;
+    } else {
+      [type, league, slug, live] = pathParts;
+    }
 
-    return {type, league, slug};
+    return {
+      type: type || null,
+      league: league || null,
+      slug: slug || null,
+      isLive: live === 'live',
+    };
   }
 
   private startLocationPolling() {
